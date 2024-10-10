@@ -1,0 +1,789 @@
+the ultimate CICD corporate devops pipeline project:-
+-----------------------------------------------------
+
+
+code repo = https://github.com/jaiswaladi246/Boardgame
+
+document = https://github.com/jaiswaladi246/DevOps_Shack_Ultimate_Pipeline_12_march
+
+
+
+
+in this project we are divideding like four phases
+
+phase-1
+
+network environment (vpc)
+k8s setup
+launch instances for nexus, SonarQube,
+
+
+phase-2
+phase-3
+phase-4
+
+basically we should create vpc for project
+
+then create a security group the below ports should be open
+
+SMTP = 25
+custom TCP = 3000-10000  // for applications
+HTTP = 80
+HTTPS = 443
+SSH = 22
+custom TCP = 6443  // setup k8s cluster
+SMTPS = 465   // mail notification
+custom TCP = 30000-32767  // this is for k8s
+
+
+create a multiple VM's
+
+3 mechines for k8s cluster master, slave-1, slave-2
+
+ubuntu - t2 medium  
+
+storage = 25 gb
+
+connect master mechine go to root user 
+
+sudo su
+
+
+ Setup K8-Cluster using kubeadm [K8 Version-->1.28.1]
+
+ 1. Update System Packages  [On Master & Worker Node]
+
+
+sudo apt-get update
+
+
+2. Install Docker  [On Master & Worker Node]
+
+
+sudo apt install docker.io -y
+sudo chmod 666 /var/run/docker.sock
+
+
+3. Install Required Dependencies for Kubernetes[On Master & Worker Node]
+
+
+sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+sudo mkdir -p -m 755 /etc/apt/keyrings
+
+
+4. Add Kubernetes Repository and GPG Key[On Master & Worker Node]
+
+
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+
+5. Update Package List[On Master & Worker Node]
+
+
+sudo apt update
+
+
+6. Install Kubernetes Components[On Master & Worker Node]
+
+
+sudo apt install -y kubeadm=1.28.1-1.1 kubelet=1.28.1-1.1 kubectl=1.28.1-1.1
+
+
+7. Initialize Kubernetes Master Node [On MasterNode]
+
+
+sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+
+
+after this it gives a token just run in the slave nodes using sudo
+
+
+8. Configure Kubernetes Cluster [On MasterNode]
+
+
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+
+9. Deploy Networking Solution (Calico) [On MasterNode]
+
+
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+
+
+10. Deploy Ingress Controller (NGINX) [On MasterNode]
+
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.49.0/deploy/static/provider/baremetal/deploy.yaml
+
+
+ kubectl get nodes
+
+we can see the nodes
+
+the k8s is ready
+
+
+
+
+for scan the k8s we should install the kubeaudit security perpose (master only)
+
+
+
+GitHub.com/shopify/kubeaudit/releases
+
+
+wget https://github.com/Shopify/kubeaudit/releases/download/v0.22.1/kubeaudit_0.22.1_linux_amd64.tar.gz
+
+wget https://github.com/Shopify/kubeaudit/releases/download/v0.22.1/kubeaudit_0.22.1_linux_amd64.tar.gz
+
+
+extract the file
+
+tar -xvzf kubeaudit_0.22.1_linux_amd64.tar.gz
+
+move the file
+
+sudo mv kubeaudit /usr/local/bin/
+
+scan 
+
+kubeaudit all
+
+
+
+
+
+create a multiple VM's
+
+create total 3 mechines
+
+2 mechines for  SonarQube and nexus
+
+ubuntu - t2 medium  
+
+storage = 20 gb
+
+
+
+1 mechine for Jenkins
+
+ubuntu - t2 large
+
+storage = 30 gb
+
+
+
+
+
+connect SonarQube:-
+------------------
+
+
+sudo apt update
+
+
+install docker from the official website 
+
+for good practice
+
+# Add Docker's official GPG key:
+
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+now root user can excute the commands but normal user also need to execute 
+
+sudo chmod 666 /var/run/docker.sock
+
+
+test
+
+sudo docker run hello-world
+
+
+docker run --name sonar -d -p 9000:9000 SonarQube:lts-community
+
+user name - admin
+password - admin
+
+
+
+
+
+
+connect nexus :-
+---------------
+
+
+sudo apt update
+
+
+install docker from the official website 
+
+for good practice
+
+# Add Docker's official GPG key:
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+now root user can excute the commands but normal user also need to execute 
+
+sudo chmod 666 /var/run/docker.sock
+
+
+test
+
+sudo docker run hello-world
+
+
+image for nexus
+
+docker run --name Nexus -d -p 8081:8081 sonatype/nexus3
+
+
+user name - admin
+password - 
+
+
+for password
+
+docker exec -it 36b1c898e6ab  /bin/bash
+
+cd donatype-work
+
+cat admin.password
+
+copy and past
+
+
+
+connect Jenkins:-
+---------------
+sudo apt-get update
+sudo apt-get install openjdk-17-jdk -y
+java -version
+wget https://get.jenkins.io/war-stable/2.452.3/jenkins.war
+ls
+java -jar jenkins.war
+
+
+
+
+create shell scripting 
+
+sudo chmod +x file name
+
+
+install docker also
+
+install trivy also
+
+install kubectl
+
+
+
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+phase2:-
+-------
+
+create repository  - private
+
+push the code to repo
+
+git add .
+
+git commit -m "text"
+
+git push 
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+phase3:-
+--------
+go to Jenkins portal 
+
+
+install plugins 
+
+jdk
+eclipse temurin installer
+maven
+maven integration 
+config file provider
+pipeline maven integration
+SonarQube scanner
+docker
+docker pipeline
+docker common
+k8s cli
+k8s credentials
+k8s clint api
+k8s
+owasp
+
+
+add tools
+
+jdk
+SonarQube
+maven
+docker
+
+
+add credintials
+
+docker hub
+GitHub
+SonarQube
+k8s
+email
+ 
+
+
+add systems
+
+SonarQube
+email notifications
+extened email
+
+
+
+
+
+create pipeline
+
+
+
+stages
+
+git checkout - git
+code compile - mvn
+test - mvn
+filesystem scan - tivy
+SonarQube analysis
+quality gate  // create a SonarQube webhook -url= pub_ip:8080/sonarqube-webhook/
+build - mvn
+publish artifact to nexus   //  add the relese , snapshots in the pom.xml file
+// add managed file also
+docker build - docker
+image scan - trivy
+docker push - docker hub
+k8s deploy - k8s
+verify the deployment - k8s
+email notification
+
+
+
+
+
+
+
+connect k8s master:-
+--------------------
+
+create a user - service account
+
+create a token for connect the Jenkins
+
+install kubectl on Jenkins
+
+curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin
+kubectl version --short --client
+
+
+
+email notification
+-------------------
+
+connect Jenkins portal 
+
+manage Jenkins > syatems > extended e mail notification
+
+smatp.gmail.com
+465
+add credintials
+
+add e-mail notifications also
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+monitoring:-
+-----------
+
+launch mechine
+
+ubuntu - t2 medium
+
+storage - 20gb
+
+
+sudo apt update
+
+install Prometheus & Grafana
+
+wget https://github.com/prometheus/prometheus/releases/download/v2.53.1/prometheus-2.53.1.linux-amd64.tar.gz
+
+tar -xvf filename
+
+remove the tar file
+
+rm -rf prometheus-2.53.1.linux-amd64.tar.gz
+
+enter the file 
+
+cd prometheus-2.53.1.linux-amd64
+ 
+./Prometheus &   // backing logs time saveing
+
+
+go into file
+
+cd Prometheus
+
+./Prometheus &
+
+pub_ip:9090
+
+
+
+then install Grafana:-
+---------------------
+
+Grafana.com
+
+sudo apt-get install -y adduser libfontconfig1 musl
+
+wget https://dl.grafana.com/enterprise/release/grafana-enterprise_11.1.0_amd64.deb
+
+sudo dpkg -i grafana-enterprise_11.1.0_amd64.deb
+
+run the commands
+
+
+make sure that after run the commands system gives some commands like 
+
+sudo /bin/systemctl start grafana-server
+
+pub_ip:3000
+
+admin
+admin
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+install black box expoter:-
+--------------------------
+
+to monitor the websites
+
+
+
+
+in Prometheus we can get that black box exprtor install the package
+
+wget https://github.com/prometheus/blackbox_exporter/releases/download/v0.25.0/blackbox_exporter-0.25.0.linux-amd64.tar.gz
+
+tar -xvf blackbox_exporter-0.25.0.linux-amd64.tar.gz
+
+remove the tar file
+
+rm -rf blackbox_exporter-0.25.0.linux-amd64.tar.gz
+
+cd blackbox_exporter-0.25.0.linux-amd64
+
+./blackbox_exporter &
+ 
+
+pub_ip:9115
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+than go to Prometheus file we can get a Prometheus.yaml file just modify that
+
+just add this one in last 
+
+
+
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]  # Choose the probe module (http_2xx, icmp, etc.)
+
+    static_configs:
+      - targets:
+          - https://prometheus.io  # Target URL to probe
+          - http://43.204.110.240:32274
+
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 65.2.179.109:9115  # Blackbox Exporter address
+
+
+rester the Prometheus  
+
+pgrep Prometheus
+
+you get a id , kill that id
+
+kill 64838
+
+restart the Prometheus 
+
+./Prometheus
+
+now refresh the page of Prometheus
+
+targets we can see the metricks
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+monitor the Jenkins
+--------------------
+
+install plugins
+
+Prometheus metrix
+
+
+
+
+Prometheus page > node_exporter 
+
+download the package in jekins server
+
+in jenkis mechine
+
+
+wget https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
+
+tar  -xvf  node_exporter-1.8.2.linux-amd64.tar.gz
+
+node_exporter-1.8.2.linux-amd64
+
+
+remove the tar fail
+
+rm -rf node_exporter-1.8.2.linux-amd64.tar.gz
+
+
+cd node_exporter-1.8.2.linux-amd64
+
+./node_exporter &
+
+now we can access it 
+
+pub_ip:9100
+
+
+ >> add systems in jenkins
+
+ 
+add node_exporter job in Prometheus.yaml file
+
+scrape_configs:
+    
+
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+
+  - job_name: 'jenkins'
+    metrics_path: '/prometheus'
+    static_configs:
+      - targets: ['jenkins_ip:jenkins_port']
+
+
+example:-
+---------
+
+ ---
+- job_name: node_exporter
+  static_configs:
+    - targets:
+        - 3.111.35.223:9100
+- job_name: jenkins
+  metrics_path: /prometheus
+  static_configs:
+    - targets:
+        - 3.111.35.223:8080
+
+
+note :- syntax is mandate
+
+
+in Grafana add new dashboard 
+
+take node port dashboard from Grafana 
+
+setup every thing
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

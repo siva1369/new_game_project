@@ -1,0 +1,190 @@
+k8s operations:-
+-------------------
+
+https://github.com/jaiswaladi246/EKS-Complete/blob/main/Steps-eks.md
+
+
+
+create namespace 
+
+
+# kubectl create ns webapps
+
+
+create a user 
+
+
+# vi svc.yaml
+
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jenkins
+  namespace: webapps
+---
+
+# kubectl apply -f svc.yaml
+
+
+create a role
+
+# vi role.yaml
+
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: app-role
+  namespace: webapps
+rules:
+  - apiGroups:
+        - ""
+        - apps
+        - autoscaling
+        - batch
+        - extensions
+        - policy
+        - rbac.authorization.k8s.io
+    resources:
+      - pods
+      - secrets
+      - componentstatuses
+      - configmaps
+      - daemonsets
+      - deployments
+      - events
+      - endpoints
+      - horizontalpodautoscalers
+      - ingress
+      - jobs
+      - limitranges
+      - namespaces
+      - nodes
+      - pods
+      - persistentvolumes
+      - persistentvolumeclaims
+      - resourcequotas
+      - replicasets
+      - replicationcontrollers
+      - serviceaccounts
+      - services
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+
+
+
+
+
+# kubectl apply -f role.yaml
+
+
+
+bind the role this service account
+
+# vi bind.yaml
+
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-rolebinding
+  namespace: webapps 
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: app-role 
+subjects:
+- namespace: webapps 
+  kind: ServiceAccount
+  name: Jenkins
+--- 
+
+
+# kubectl apply -f bind.yaml
+
+
+user got created but communication between the Jenkins and k8s we should create a token
+
+
+# vi token.yaml
+
+---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+  name: mysecretname
+  annotations:
+    kubernetes.io/service-account.name: Jenkins (myserviceaccount)
+---
+
+
+
+# kubectl apply -f token.yaml -n webapps
+
+
+
+
+
+
+# kubectl describe secret mysecretname -n webapps
+
+
+after this command you got a token . using that token create an authentication bet ween Jenkins and k8s.
+
+copy the token  add it in the Jenkins credintials.
+
+in the process of writing cicd script use snypet generator
+
+take options
+
+sample step = withkubeconfig: configuration k8s CLI (kubectl)
+
+credentials = take
+
+server endpoint =
+
+in k8s controller 'cd ~/.kube'  see the list of files 'ls' we can able to see the cache and config
+
+
+cat config
+
+server: https://172.12.23.45:6443  like this we can able to see this is the server end point
+
+cluster name = k8s
+
+namespace = webapps
+
+ >>> generate 
+
+add this in deploy to k8s
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
